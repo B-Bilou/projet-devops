@@ -30,7 +30,8 @@ jobs:
         run: vagrant up
         
       - name: Test Ollama Installation
-        run: vagrant ssh -c "ollama --version"
+        # Sur Windows via Vagrant, on lance la commande ainsi :
+        run: vagrant winrm --command "ollama --version"
 
       - name: Package Box
         run: vagrant package --output deepseek-ci.box
