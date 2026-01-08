@@ -1,9 +1,14 @@
 name: Construction Box Vagrant
-on: [push] # Se lance quand tu push
+on: [push]
+
+env:
+  # Récupération des clés depuis le coffre-fort GitHub
+  HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID }}
+  HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET }}
 
 jobs:
   build-box:
-    runs-on: macos-12 # macOS obligatoire pour VirtualBox sur GitHub
+    runs-on: macos-12
     steps:
       - uses: actions/checkout@v4
       
@@ -13,14 +18,24 @@ jobs:
           brew install hashicorp/tap/hashicorp-vagrant
           brew install --cask virtualbox
       
+      # Installation de l'outil d'authentification HashiCorp
+      - name: Install HCP CLI
+        run: brew install hashicorp/tap/hcp
+
+      # Connexion au Cloud
+      - name: Authenticate with HCP
+        run: hcp auth login --client-id "$HCP_CLIENT_ID" --client-secret "$HCP_CLIENT_SECRET"
+
       - name: Build VM (Vagrant Up)
         run: vagrant up
         
       - name: Test Ollama Installation
-        # On demande à la VM si Ollama répond
         run: vagrant ssh -c "ollama --version"
 
       - name: Package Box
         run: vagrant package --output deepseek-ci.box
-        
-      # On s'arrête là pour l'instant (on verra l'upload Cloud après le premier succès)
+      
+      # Envoi vers ta nouvelle box "deepseek-ci"
+      - name: Publish to Cloud
+        # Syntaxe : organisation/box version provider fichier
+        run: vagrant cloud publish easy4ia/deepseek-ci 1.0.0 virtualbox deepseek-ci.box --force
