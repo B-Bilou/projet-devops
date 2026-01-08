@@ -1,0 +1,26 @@
+name: Construction Box Vagrant
+on: [push] # Se lance quand tu push
+
+jobs:
+  build-box:
+    runs-on: macos-12 # macOS obligatoire pour VirtualBox sur GitHub
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Vagrant & VirtualBox
+        run: |
+          brew tap hashicorp/tap
+          brew install hashicorp/tap/hashicorp-vagrant
+          brew install --cask virtualbox
+      
+      - name: Build VM (Vagrant Up)
+        run: vagrant up
+        
+      - name: Test Ollama Installation
+        # On demande à la VM si Ollama répond
+        run: vagrant ssh -c "ollama --version"
+
+      - name: Package Box
+        run: vagrant package --output deepseek-ci.box
+        
+      # On s'arrête là pour l'instant (on verra l'upload Cloud après le premier succès)
